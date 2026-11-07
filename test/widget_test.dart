@@ -3,8 +3,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:taskflow/main.dart';
 
 void main() {
-  testWidgets('Muestra el panel inicial personalizado', (tester) async {
+  testWidgets('El listado muestra tareas locales y permite desplazarse', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 300);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(const TaskFlowApp());
+    expect(find.text('Mis tareas'), findsOneWidget);
+    expect(find.text('Crear la bienvenida de TaskFlow'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle), findsWidgets);
+    expect(find.byIcon(Icons.chevron_right), findsWidgets);
+
+    await tester.scrollUntilVisible(
+      find.text('Guardar la evidencia de la sesión 3'),
+      150,
+      scrollable: find.byType(Scrollable),
+    );
+    expect(find.text('Guardar la evidencia de la sesión 3'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Muestra el panel inicial personalizado', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: WelcomeScreen()));
     expect(find.text('TaskFlow'), findsOneWidget);
     expect(find.text('¡Hola, Héctor!'), findsOneWidget);
     expect(
@@ -23,7 +46,7 @@ void main() {
   testWidgets('Agrega, completa y reactiva tareas sin superar la meta', (
     tester,
   ) async {
-    await tester.pumpWidget(const TaskFlowApp());
+    await tester.pumpWidget(const MaterialApp(home: WelcomeScreen()));
     for (var i = 0; i < 2; i++) {
       await tester.tap(find.text('Agregar tarea'));
       await tester.pump();
