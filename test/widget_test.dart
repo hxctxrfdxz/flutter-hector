@@ -12,6 +12,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const TaskFlowApp());
+    await tester.pumpAndSettle();
     expect(find.text('Mis tareas'), findsOneWidget);
     expect(find.text('Crear la bienvenida de TaskFlow'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle), findsWidgets);
@@ -24,6 +25,52 @@ void main() {
     );
     expect(find.text('Guardar la evidencia de la sesión 3'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Abre tres tareas por id y vuelve al listado', (tester) async {
+    appRouter.go('/');
+    await tester.pumpWidget(const TaskFlowApp());
+    await tester.pumpAndSettle();
+
+    for (final task in demoTasks.take(3)) {
+      await tester.tap(find.text(task.title));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Detalle de tarea'), findsOneWidget);
+      expect(find.text(task.title), findsOneWidget);
+      expect(find.text(task.description), findsOneWidget);
+      expect(find.text('Prioridad: ${task.priority}'), findsOneWidget);
+      expect(
+        find.text(
+          task.isCompleted ? 'Estado: completada' : 'Estado: pendiente',
+        ),
+        findsOneWidget,
+      );
+      expect(appRouter.state.uri.path, '/task/${task.id}');
+
+      await tester.tap(find.text('Consultar estado'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          task.isCompleted
+              ? 'Esta tarea ya está completada.'
+              : 'Esta tarea está pendiente.',
+        ),
+        findsOneWidget,
+      );
+      // Esperar a que termine el aviso antes de cambiar de pantalla.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      if (task.id == 2) {
+        await tester.pageBack();
+      } else {
+        await tester.tap(find.text('Volver al listado'));
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Mis tareas'), findsOneWidget);
+      expect(appRouter.state.uri.path, '/');
+    }
   });
 
   testWidgets('Muestra el panel inicial personalizado', (tester) async {
