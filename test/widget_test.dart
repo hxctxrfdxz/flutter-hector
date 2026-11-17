@@ -19,11 +19,11 @@ void main() {
     expect(find.byIcon(Icons.chevron_right), findsWidgets);
 
     await tester.scrollUntilVisible(
-      find.text('Guardar la evidencia de la sesión 3'),
+      find.text('Guardar la evidencia de la sesión 5'),
       150,
       scrollable: find.byType(Scrollable),
     );
-    expect(find.text('Guardar la evidencia de la sesión 3'), findsOneWidget);
+    expect(find.text('Guardar la evidencia de la sesión 5'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -40,6 +40,7 @@ void main() {
       expect(find.text(task.title), findsOneWidget);
       expect(find.text(task.description), findsOneWidget);
       expect(find.text('Prioridad: ${task.priority}'), findsOneWidget);
+      expect(find.text('Usuario: ${task.userId}'), findsOneWidget);
       expect(
         find.text(
           task.isCompleted ? 'Estado: completada' : 'Estado: pendiente',
@@ -70,6 +71,23 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Mis tareas'), findsOneWidget);
       expect(appRouter.state.uri.path, '/');
+    }
+  });
+
+  testWidgets('Muestra un aviso si el id es inválido o no existe', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const TaskFlowApp());
+    await tester.pumpAndSettle();
+
+    for (final id in ['abc', '999']) {
+      appRouter.go('/task/$id');
+      await tester.pumpAndSettle();
+      expect(find.text('No se encontró esta tarea.'), findsOneWidget);
+
+      await tester.tap(find.text('Volver al listado'));
+      await tester.pumpAndSettle();
+      expect(find.text('Mis tareas'), findsOneWidget);
     }
   });
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'task.dart';
+
 void main() {
   GoRouter.optionURLReflectsImperativeAPIs = true;
   runApp(const TaskFlowApp());
@@ -23,29 +25,14 @@ class TaskFlowApp extends StatelessWidget {
   }
 }
 
-class Task {
-  const Task({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.priority,
-    required this.isCompleted,
-  });
-
-  final int id;
-  final String title;
-  final String description;
-  final String priority;
-  final bool isCompleted;
-}
-
-const demoTasks = [
+const demoTasks = <Task>[
   Task(
     id: 1,
     title: 'Crear la bienvenida de TaskFlow',
     description: 'Mostrar el nombre del estudiante y el mensaje de bienvenida.',
     priority: 'Alta',
     isCompleted: true,
+    userId: 1,
   ),
   Task(
     id: 2,
@@ -54,13 +41,15 @@ const demoTasks = [
         'Agregar y completar tareas con setState y un objetivo diario.',
     priority: 'Alta',
     isCompleted: true,
+    userId: 1,
   ),
   Task(
     id: 3,
     title: 'Construir el listado local',
     description: 'Representar cinco tareas con ListView.builder y TaskCard.',
     priority: 'Alta',
-    isCompleted: false,
+    isCompleted: true,
+    userId: 1,
   ),
   Task(
     id: 4,
@@ -69,15 +58,24 @@ const demoTasks = [
         'Revisar la prioridad, el estado y el desplazamiento de la lista.',
     priority: 'Media',
     isCompleted: false,
+    userId: 1,
   ),
   Task(
     id: 5,
-    title: 'Guardar la evidencia de la sesión 3',
-    description: 'Capturar el listado y una tarea completada para la entrega.',
+    title: 'Guardar la evidencia de la sesión 5',
+    description: 'Capturar el listado y el detalle con el usuario de prueba.',
     priority: 'Baja',
     isCompleted: false,
+    userId: 1,
   ),
 ];
+
+Task? findTask(int? id) {
+  for (final task in demoTasks) {
+    if (task.id == id) return task;
+  }
+  return null;
+}
 
 final appRouter = GoRouter(
   routes: [
@@ -85,8 +83,8 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/task/:id',
       builder: (context, state) {
-        final taskId = int.parse(state.pathParameters['id']!);
-        return TaskDetailScreen(taskId: taskId);
+        final taskId = int.tryParse(state.pathParameters['id'] ?? '');
+        return TaskDetailScreen(task: findTask(taskId));
       },
     ),
   ],
@@ -138,13 +136,13 @@ class TaskListScreen extends StatelessWidget {
 }
 
 class TaskDetailScreen extends StatelessWidget {
-  const TaskDetailScreen({super.key, required this.taskId});
+  const TaskDetailScreen({super.key, required this.task});
 
-  final int taskId;
+  final Task? task;
 
   @override
   Widget build(BuildContext context) {
-    final task = demoTasks.firstWhere((item) => item.id == taskId);
+    final task = this.task;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detalle de tarea')),
@@ -153,31 +151,41 @@ class TaskDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(task.title, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 16),
-            Text(task.description),
-            const SizedBox(height: 16),
-            Chip(label: Text('Prioridad: ${task.priority}')),
-            const SizedBox(height: 12),
-            Text(task.isCompleted ? 'Estado: completada' : 'Estado: pendiente'),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      task.isCompleted
-                          ? 'Esta tarea ya está completada.'
-                          : 'Esta tarea está pendiente.',
-                    ),
-                  ),
-                );
-              },
-              icon: Icon(
-                task.isCompleted ? Icons.check_circle : Icons.pending_actions,
+            if (task == null)
+              const Text('No se encontró esta tarea.')
+            else ...[
+              Text(
+                task.title,
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
-              label: const Text('Consultar estado'),
-            ),
+              const SizedBox(height: 16),
+              Text(task.description),
+              const SizedBox(height: 16),
+              Chip(label: Text('Prioridad: ${task.priority}')),
+              const SizedBox(height: 12),
+              Text(
+                task.isCompleted ? 'Estado: completada' : 'Estado: pendiente',
+              ),
+              Text('Usuario: ${task.userId}'),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        task.isCompleted
+                            ? 'Esta tarea ya está completada.'
+                            : 'Esta tarea está pendiente.',
+                      ),
+                    ),
+                  );
+                },
+                icon: Icon(
+                  task.isCompleted ? Icons.check_circle : Icons.pending_actions,
+                ),
+                label: const Text('Consultar estado'),
+              ),
+            ],
             const Spacer(),
             FilledButton.tonalIcon(
               onPressed: () {
