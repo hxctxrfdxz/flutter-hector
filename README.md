@@ -137,3 +137,28 @@ listado, del vacío y del error, además de comprobar la recuperación con Reint
 Una respuesta vacía se considera válida. Un fallo limpia las tareas anteriores
 y muestra el error. Actualizar vuelve a leer el servidor y recupera sus estados
 originales para las tareas marcadas localmente.
+
+## Formulario de tareas
+
+La sesión 9 incorpora «Nueva tarea», accesible desde el botón del listado y la
+ruta `/new`. El formulario prepara un `TaskDraft` con título, descripción,
+prioridad y fecha opcional.
+
+- El título es obligatorio y necesita al menos tres caracteres después de
+  quitar espacios al principio y al final.
+- La descripción es opcional.
+- La prioridad permite Alta, Media o Baja, con Media seleccionada al abrir.
+- «Elegir fecha (opcional)» abre el calendario. «Quitar fecha» permite retirarla.
+- Guardar un formulario válido regresa al listado y muestra
+  «Formulario válido» seguido del título ingresado.
+- Cancelar o usar la flecha de regreso descarta el borrador sin mostrar ese aviso.
+
+En esta sesión Guardar devuelve el borrador a la pantalla anterior. El listado
+continúa mostrando las tareas consultadas desde la API. La conexión del guardado
+con POST se implementará en la sesión 10.
+
+Para comprobarlo, intentar guardar con un título vacío, uno de dos caracteres y
+uno válido. Verificar el guardado con y sin fecha, la selección de prioridad,
+la cancelación y el acceso al detalle de las tareas existentes.
+La evidencia de la sesión incluye capturas de errores de validación, formulario
+válido y mensaje de retorno al listado.
