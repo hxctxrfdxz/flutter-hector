@@ -1,20 +1,156 @@
-# taskflow
+# TaskFlow
 
-A new Flutter project.
+Aplicación Flutter para estudiantes que organizan sus tareas académicas.
+Consulta tareas por HTTPS, muestra su detalle y permite practicar creación,
+edición y eliminación con JSONPlaceholder. Incluye búsqueda, filtro de pendientes,
+recuperación de errores y una preferencia local para el nombre.
 
-## Getting Started
+## Requisitos
 
-This project is a starting point for a Flutter application.
+- Flutter SDK con Dart compatible con `^3.13.7`, según `pubspec.yaml`.
+  Esta entrega se comprueba con Flutter 3.47.8 y Dart 3.13.7.
+- Git y conexión a internet para instalar dependencias y consultar la API.
+- Chrome para ejecutar la versión web.
+- Para Android, Android SDK y un emulador iniciado o teléfono conectado con
+  depuración habilitada. El proyecto configura Java 17.
+- En Windows, Flutter puede solicitar Modo desarrollador para crear los enlaces
+  de los plugins al resolver dependencias.
 
-A few resources to get you started if this is your first Flutter project:
+## Instalación y ejecución
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Clonar el repositorio y abrir la carpeta del proyecto.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```powershell
+git clone https://github.com/hxctxrfdxz/flutter-hector.git taskflow
+cd taskflow
+flutter pub get
+flutter devices
+```
+
+Para Chrome, iniciar un servidor con puerto fijo.
+
+```powershell
+flutter run -d web-server --web-port 7357 --no-pub
+```
+
+Abrir [TaskFlow en localhost](http://localhost:7357) en una ventana habitual de
+Chrome y mantener la terminal abierta. El mismo navegador y puerto permiten
+comprobar el nombre recordado. La terminal acepta `R` para Hot Restart y `q`
+para detener la ejecución.
+
+Para Android, conectar el dispositivo o iniciar el emulador y ejecutar.
+
+```powershell
+flutter run
+```
+
+Elegir el dispositivo Android cuando Flutter lo solicite. La aplicación necesita
+conexión para cargar las tareas. El manifest principal ya declara
+`android.permission.INTERNET`.
+
+## Arquitectura y archivos principales
+
+La aplicación organiza las tareas por funcionalidad mediante MVVM.
+
+```mermaid
+flowchart LR
+  View["Lista, detalle y formulario"] --> VM["TasksViewModel"]
+  VM --> Repository["TaskRepository"]
+  Repository --> Remote["RemoteTaskRepository"]
+  Remote --> Service["TaskApiService · Dio"]
+  Service --> API["JSONPlaceholder"]
+  Repository --> Local["LocalTaskRepository"]
+  Settings["SettingsScreen"] --> Preferences["UserPreferences"]
+  Preferences --> Storage["SharedPreferencesAsync"]
+```
+
+| Ruta | Responsabilidad |
+| --- | --- |
+| `lib/main.dart` | Construye el repositorio remoto y entrega un ViewModel compartido con Provider. |
+| `lib/app/taskflow_app.dart` | Configura MaterialApp y las rutas con go_router. |
+| `lib/core/app_theme.dart` | Centraliza el tema de la aplicación. |
+| `lib/core/task_failure.dart` | Representa mensajes de error comprensibles. |
+| `lib/core/settings_screen.dart` y `lib/core/user_preferences.dart` | Guardan y recuperan la preferencia del nombre. |
+| `lib/features/tasks/domain/task.dart` | Modelo inmutable, conversión JSON y copyWith. |
+| `lib/features/tasks/data/` | Contrato del repositorio, implementaciones local y remota y servicio HTTP. |
+| `lib/features/tasks/presentation/` | ViewModel, pantallas, formulario y controles de búsqueda. |
+| `test/` | Pruebas de modelos, ViewModel, widgets y fakes controlados. |
+
+Las vistas muestran datos y llaman al ViewModel. El repositorio gestiona la
+fuente de datos. El servicio concentra las solicitudes HTTP y el modelo convierte
+el JSON. Provider reconstruye las vistas al recibir notifyListeners.
+
+| Ruta de la app | Pantalla |
+| --- | --- |
+| `/` | Mis tareas, búsqueda, filtros y actualización. |
+| `/task/:id` | Detalle, cambio local de estado, edición de título y eliminación. |
+| `/new` | Nueva tarea con validación y fecha opcional. |
+| `/settings` | Configuración del nombre local. |
+
+## Calidad y comprobación de entrega
+
+Ejecutar desde la raíz del proyecto después de instalar las dependencias.
+
+```powershell
+dart format lib test
+flutter analyze --no-pub
+flutter test --no-pub
+git diff --check
+```
+
+Las pruebas cubren inicio, lista y detalle, validación, CRUD, fallos y reintento,
+prevención de envíos duplicados, filtros y preferencias mediante datos controlados.
+
+En la comprobación de la sesión 15, el formato terminó sin cambios, el análisis
+mostró `No issues found!`, las 24 pruebas terminaron con `All tests passed!` y
+`git diff --check` finalizó sin errores. El servidor web respondió con HTTP 200.
+
+- [x] Inicio y consulta HTTP comprobados durante el desarrollo.
+- [x] Navegación entre lista y detalle cubierta por pruebas.
+- [x] Creación, edición y eliminación con confirmación y mensajes de éxito o error.
+- [x] Recuperación de una carga fallida mediante Reintentar.
+- [x] Búsqueda, filtros y preferencias cubiertos por pruebas.
+- [x] Análisis estático y conjunto de pruebas aprobados.
+- [x] Incorporar una captura del formulario válido.
+- [ ] Revisión por otra persona siguiendo únicamente esta instalación.
+
+## Capturas de las sesiones
+
+Estas imágenes proceden de las evidencias compartidas durante el curso.
+Los controles incorporados después de cada captura se describen en las secciones
+de funcionalidades y pueden variar respecto de esas imágenes históricas.
+
+### Listado remoto, sesión 7
+
+![Listado de tareas del usuario 2](docs/capturas/listado-api-sesion-07.png)
+
+### Detalle remoto, sesión 7
+
+![Detalle con usuario, prioridad y estado](docs/capturas/detalle-api-sesion-07.png)
+
+### Error de conexión y recuperación, sesión 11
+
+![Error de conexión con Reintentar](docs/capturas/error-conexion-sesion-11.png)
+
+![Listado recuperado después de Reintentar](docs/capturas/recuperacion-sesion-11.png)
+
+### Pruebas aprobadas, sesión 12
+
+![Evidencia histórica de las 18 pruebas de la sesión 12](docs/capturas/pruebas-sesion-12.png)
+
+### Pruebas aprobadas, sesión 15
+
+![Las 24 pruebas aprobadas de la entrega](docs/capturas/pruebas-sesion-15.png)
+
+Los mensajes de error de esta ejecución corresponden a fallos simulados dentro
+de las pruebas. El resultado final confirma que las 24 comprobaciones pasaron.
+
+### Formulario válido, sesión 15
+
+![Formulario de nueva tarea antes de guardar](docs/capturas/formulario-sesion-15.png)
+
+El título es válido, la prioridad seleccionada es Media y la descripción y fecha
+se mantienen como campos opcionales.
 
 ## Alcance de TaskFlow
 
@@ -25,9 +161,9 @@ en una sola lista para facilitar la planificación semanal.
 **Usuario objetivo.** Estudiantes que organizan sus actividades y entregas
 académicas.
 
-En la sesión 5, la app muestra un listado local de cinco tareas del proyecto y
-permite consultar su detalle. El alcance final incluye crear, editar y eliminar
-tareas en sesiones posteriores.
+El listado local de cinco tareas de la sesión 5 se conserva en el repositorio
+local. La ejecución actual consulta tareas remotas y permite crear, editar
+el título y eliminar mediante la API de práctica.
 
 ### Historias de usuario y criterios de aceptación
 
@@ -57,9 +193,9 @@ descrito en «API de tareas».
 
 | Pantalla | Elementos de arriba hacia abajo |
 | --- | --- |
-| **Mis tareas** | Barra superior → tarjetas con título, prioridad y estado → futura acción «Nueva tarea». |
-| **Detalle de tarea** | Barra con flecha de regreso → título, descripción, prioridad, estado y usuario → «Consultar estado» y «Volver al listado». Más adelante incluirá acciones para editar y eliminar. |
-| **Formulario futuro** | Título «Nueva tarea» o «Editar tarea» → campos de título, descripción y prioridad → botón «Guardar». |
+| **Mis tareas** | Barra con actualizar y configuración → búsqueda y filtro → tarjetas → Nueva tarea. |
+| **Detalle de tarea** | Título, descripción, prioridad, estado y usuario → marcar estado, editar título, eliminar y volver. |
+| **Formulario** | Nueva tarea → título, descripción, prioridad y fecha opcional → Guardar o Cancelar. |
 
 ### Requisitos no funcionales
 
@@ -67,17 +203,17 @@ descrito en «API de tareas».
 - Un identificador inválido o inexistente debe mostrar un mensaje y permitir
   volver al listado.
 
-### Operaciones previstas de la API
+### Operaciones de la API utilizada
 
-| Método y ruta previstos | Operación |
+| Método y ruta | Operación |
 | --- | --- |
-| `GET /tasks` | Listar tareas. |
-| `GET /tasks/:id` | Consultar una tarea. |
-| `POST /tasks` | Crear una tarea. |
-| `PATCH /tasks/:id` | Actualizar los campos que cambiaron. |
-| `DELETE /tasks/:id` | Eliminar una tarea. |
+| `GET /todos?userId=2` | Cargar las tareas del usuario elegido. |
+| `POST /todos` | Simular la creación de una tarea. |
+| `PATCH /todos/:id` | Simular la actualización del título y estado enviados. |
+| `DELETE /todos/:id` | Simular la eliminación de una tarea. |
 
-La API se elegirá en una sesión posterior. En la sesión 5 se usan datos locales.
+El detalle usa el id de la ruta de la app para buscar una tarea ya cargada.
+JSONPlaceholder es la fuente seleccionada desde la sesión 7.
 
 ## API de tareas
 
@@ -103,12 +239,11 @@ objeto JSON en una tarea. `RemoteTaskRepository` conserva una copia en memoria.
 `TasksViewModel.loadTasks` espera la respuesta y notifica a las vistas mediante
 Provider. La consola registra `GET /todos?userId=2 → HTTP 200` cuando la consulta
 termina correctamente. Durante la espera se muestra un indicador de carga y,
-si falla, «No se pudieron cargar las tareas.».
+si falla, muestra el mensaje de TaskFailure correspondiente.
 
 Marcar una tarea como completada o pendiente modifica la copia local en memoria.
 Al reiniciar la app o volver a cargar desde la API se recuperan los valores del
-servidor. La sesión 7 realiza consultas GET. Las operaciones de escritura remota
-se trabajarán en sesiones posteriores.
+servidor. Desde la sesión 10 también se realizan POST, PATCH y DELETE simulados.
 
 Las cinco tareas propias de la sesión 6 siguen en `LocalTaskRepository`, que
 también implementa el contrato asíncrono `Future<List<Task>>`.
@@ -127,7 +262,7 @@ procedimiento.
 | --- | --- | --- |
 | Datos disponibles | Mantener internet activo y `TaskApiService.userId = 2`, iniciar la app o pulsar «Actualizar tareas». | Aparecen las tareas remotas y cada tarjeta abre su detalle. |
 | Carga | En DevTools de Chrome, abrir Network, seleccionar Slow 3G y pulsar «Actualizar tareas». | Aparece el indicador de progreso y se deshabilita el botón de actualización. Al finalizar se presenta la respuesta. |
-| Error | Con DevTools abierto, seleccionar Offline en Network y pulsar «Actualizar tareas». | Aparece «No se pudieron cargar las tareas.» junto a «Reintentar». |
+| Error | Con DevTools abierto, seleccionar Offline en Network y pulsar «Actualizar tareas». | Aparece «Revisa tu conexión a internet.» junto a «Reintentar». |
 | Recuperación | Tras el error, cambiar Offline a No throttling y pulsar «Reintentar». | Las tareas vuelven sin reiniciar TaskFlow. |
 | Vacío | Cambiar temporalmente `TaskApiService.userId` a `9999` y hacer Hot Restart. | La API devuelve una lista vacía y aparecen «Todavía no hay tareas para mostrar.» y «Actualizar». |
 
@@ -149,13 +284,12 @@ prioridad y fecha opcional.
 - La descripción es opcional.
 - La prioridad permite Alta, Media o Baja, con Media seleccionada al abrir.
 - «Elegir fecha (opcional)» abre el calendario. «Quitar fecha» permite retirarla.
-- Guardar un formulario válido regresa al listado y muestra
-  «Formulario válido» seguido del título ingresado.
+- Guardar envía el formulario válido y, tras una respuesta correcta, regresa al
+  listado con «Tarea creada».
 - Cancelar o usar la flecha de regreso descarta el borrador sin mostrar ese aviso.
 
-En esta sesión Guardar devuelve el borrador a la pantalla anterior. El listado
-continúa mostrando las tareas consultadas desde la API. La conexión del guardado
-con POST se implementará en la sesión 10.
+El formulario se conectó a POST en la sesión 10. Desde la sesión 11 espera la
+respuesta con Guardar deshabilitado y conserva los campos ante un fallo.
 
 Para comprobarlo, intentar guardar con un título vacío, uno de dos caracteres y
 uno válido. Verificar el guardado con y sin fecha, la selección de prioridad,
@@ -165,7 +299,7 @@ válido y mensaje de retorno al listado.
 
 ## CRUD de tareas
 
-Desde la sesión 10, Guardar prepara el borrador y el listado lo envía mediante
+Guardar prepara el borrador y llama al ViewModel para enviarlo mediante
 `POST /todos`. La tarea aparece después de recibir una respuesta correcta,
 con el mensaje «Tarea creada». El título y la descripción se envían al repositorio
 junto con la prioridad. El servicio envía a la API título, estado y usuario.
