@@ -17,7 +17,7 @@ void main() {
   testWidgets('El listado muestra tareas locales y permite desplazarse', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(400, 300);
+    tester.view.physicalSize = const Size(400, 500);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -32,7 +32,10 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Guardar la evidencia de la sesión 5'),
       150,
-      scrollable: find.byType(Scrollable),
+      scrollable: find.descendant(
+        of: find.byType(ListView),
+        matching: find.byType(Scrollable),
+      ),
     );
     expect(find.text('Guardar la evidencia de la sesión 5'), findsOneWidget);
     expect(tester.takeException(), isNull);

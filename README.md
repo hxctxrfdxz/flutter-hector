@@ -291,3 +291,27 @@ Mantener la terminal del servidor abierta durante la comprobación.
 Chrome almacena esta preferencia por origen, que incluye el puerto. Cambiar de
 puerto, perfil o limpiar los datos del sitio puede cambiar el almacenamiento
 disponible para la aplicación.
+
+## Búsqueda, filtros y accesibilidad
+
+La sesión 14 agrega «Buscar por título», el interruptor «Solo pendientes» y
+«Limpiar filtros». La búsqueda ignora mayúsculas y espacios en los extremos.
+Texto y estado se combinan sobre las tareas ya cargadas en el ViewModel.
+Filtrar conserva la lista original y no realiza nuevas consultas a la API.
+
+Si los filtros no coinciden con ninguna tarea, aparece «No hay resultados para
+estos filtros.». Limpiar borra el campo y desactiva Solo pendientes para recuperar
+la lista completa. El mensaje de respuesta vacía de la API sigue siendo
+«Todavía no hay tareas para mostrar.».
+
+El controlador de búsqueda conserva el texto y el cursor durante las
+reconstrucciones. La lista tiene espacio acotado mediante Expanded y mantiene
+su desplazamiento y actualización por gesto. Los botones de icono tienen tooltip
+y los estados incluyen iconos distintos con etiquetas «Tarea completada» y
+«Tarea pendiente» para lectores de pantalla.
+
+Para comprobar la práctica, buscar una parte del título en mayúsculas, activar
+Solo pendientes, escribir un texto sin coincidencias y pulsar Limpiar filtros.
+Verificar que se recupera la lista y que el detalle abre la tarea elegida.
+Las pruebas incluyen una pantalla de 320 × 640 con texto ampliado al 200 %.
+La evidencia consiste en capturas con los filtros activos y después de limpiarlos.

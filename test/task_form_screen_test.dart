@@ -45,7 +45,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(appRouter.state.uri.path, '/');
     expect(find.text('Tarea creada'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Preparar demo'), 150);
+    await tester.scrollUntilVisible(
+      find.text('Preparar demo'),
+      150,
+      scrollable: find.descendant(
+        of: find.byType(ListView),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(find.widgetWithText(ListTile, 'Preparar demo'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

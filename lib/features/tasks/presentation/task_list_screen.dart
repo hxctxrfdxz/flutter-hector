@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../domain/task.dart';
 import 'task_form_screen.dart';
+import 'task_search_controls.dart';
 import 'tasks_view_model.dart';
 
 class TaskCard extends StatelessWidget {
@@ -20,6 +21,9 @@ class TaskCard extends StatelessWidget {
         leading: Icon(
           task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
           color: task.isCompleted ? Colors.green : null,
+          semanticLabel: task.isCompleted
+              ? 'Tarea completada'
+              : 'Tarea pendiente',
         ),
         title: Text(task.title),
         subtitle: Text('${task.priority} · ${task.description}'),
@@ -106,20 +110,33 @@ class TaskListScreen extends StatelessWidget {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: () => context.read<TasksViewModel>().loadTasks(),
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        itemCount: viewModel.tasks.length,
-        itemBuilder: (context, index) {
-          final task = viewModel.tasks[index];
-          return TaskCard(
-            task: task,
-            onTap: () => context.push('/task/${task.id}'),
-          );
-        },
-      ),
+    final tasks = viewModel.visibleTasks;
+    return Column(
+      children: [
+        const TaskSearchControls(),
+        if (tasks.isEmpty)
+          const Expanded(
+            child: Center(child: Text('No hay resultados para estos filtros.')),
+          )
+        else
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => context.read<TasksViewModel>().loadTasks(),
+              child: ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: tasks.length,
+                itemBuilder: (context, index) {
+                  final task = tasks[index];
+                  return TaskCard(
+                    task: task,
+                    onTap: () => context.push('/task/${task.id}'),
+                  );
+                },
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

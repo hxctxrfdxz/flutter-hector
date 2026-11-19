@@ -12,9 +12,36 @@ class TasksViewModel extends ChangeNotifier {
   bool isLoading = false;
   bool isSaving = false;
   String? errorMessage;
+  String query = '';
+  bool onlyPending = false;
 
   List<Task> get tasks => List.unmodifiable(_tasks);
   bool get isEmpty => !isLoading && errorMessage == null && _tasks.isEmpty;
+
+  List<Task> get visibleTasks {
+    final text = query.trim().toLowerCase();
+    return _tasks.where((task) {
+      final matchesText = task.title.toLowerCase().contains(text);
+      final matchesState = !onlyPending || !task.isCompleted;
+      return matchesText && matchesState;
+    }).toList();
+  }
+
+  void setQuery(String value) {
+    query = value;
+    notifyListeners();
+  }
+
+  void setOnlyPending(bool value) {
+    onlyPending = value;
+    notifyListeners();
+  }
+
+  void clearFilters() {
+    query = '';
+    onlyPending = false;
+    notifyListeners();
+  }
 
   Future<void> loadTasks() async {
     if (isLoading || isSaving) return;

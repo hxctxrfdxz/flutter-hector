@@ -171,7 +171,15 @@ void main() {
     expect(viewModel.isSaving, isFalse);
     expect(find.text('Tarea creada'), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text(createdTask.title), 150);
+    await tester.scrollUntilVisible(
+      find.text(createdTask.title),
+      150,
+      scrollable: find.descendant(
+        of: find.byType(ListView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text(createdTask.title));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Editar título'));
