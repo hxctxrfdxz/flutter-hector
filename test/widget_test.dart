@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:taskflow/app/taskflow_app.dart';
 import 'package:taskflow/features/tasks/data/local_task_repository.dart';
-import 'package:taskflow/features/tasks/domain/task.dart';
 import 'package:taskflow/features/tasks/presentation/tasks_view_model.dart';
 import 'package:taskflow/features/tasks/presentation/welcome_screen.dart';
 
@@ -15,31 +14,6 @@ Widget buildTestApp() {
 }
 
 void main() {
-  test('Convierte tareas remotas y conserva el formato local', () {
-    final remote = Task.fromJson({
-      'id': 21,
-      'title': 'Tarea remota',
-      'completed': false,
-      'userId': 2,
-    });
-    expect(remote.description, 'Sin descripción (API)');
-    expect(remote.priority, 'Sin prioridad (API)');
-    expect(remote.isCompleted, isFalse);
-    expect(remote.userId, 2);
-
-    final local = Task.fromJson({
-      'id': 1,
-      'title': 'Tarea local',
-      'description': 'Descripción propia',
-      'priority': 'Alta',
-      'isCompleted': true,
-      'userId': 1,
-    });
-    expect(local.description, 'Descripción propia');
-    expect(local.priority, 'Alta');
-    expect(local.isCompleted, isTrue);
-  });
-
   testWidgets('El listado muestra tareas locales y permite desplazarse', (
     tester,
   ) async {

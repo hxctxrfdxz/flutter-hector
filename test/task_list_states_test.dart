@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:taskflow/core/task_failure.dart';
-import 'package:taskflow/features/tasks/data/local_task_repository.dart';
 import 'package:taskflow/features/tasks/domain/task.dart';
 import 'package:taskflow/features/tasks/presentation/task_list_screen.dart';
 import 'package:taskflow/features/tasks/presentation/tasks_view_model.dart';
 
-class ControlledTaskRepository extends LocalTaskRepository {
+import 'fake_task_repository.dart';
+
+class ControlledTaskRepository extends FakeTaskRepository {
+  ControlledTaskRepository() : super([]);
+
   final requests = <Completer<List<Task>>>[];
 
   @override

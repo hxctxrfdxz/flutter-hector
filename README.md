@@ -230,3 +230,34 @@ Para las evidencias en Chrome, comprobar estos casos.
 Para observar el bloqueo de Guardar, seleccionar Slow 3G en Network y guardar
 un formulario válido. Restaurar No throttling al terminar. La versión final
 usa `/todos`, `userId = 2` y los límites de red originales.
+
+## Pruebas automatizadas
+
+La sesión 12 reúne las cuatro áreas de prueba solicitadas, adaptadas al usuario 2,
+los mensajes personalizados y el contrato CRUD actual.
+
+| Área | Archivo | Comprobación |
+| --- | --- | --- |
+| Modelo JSON | `test/task_model_test.dart` | Convierte `completed` al estado del modelo, completa descripción y prioridad ausentes y conserva el formato local. |
+| Estado del ViewModel | `test/tasks_view_model_test.dart` | Una lista vacía se distingue de un error. Un fallo limpia los datos anteriores y un reintento los recupera. |
+| Validación del formulario | `test/task_form_screen_test.dart` | Rechaza títulos vacíos y de dos caracteres. Permite guardar datos válidos con fecha opcional y cancelar sin confirmación. |
+| Carga y error en la lista | `test/task_list_states_test.dart` | Muestra carga, error, Reintentar y vacío con Actualizar. Recupera las tareas y comprueba la actualización por gesto. |
+
+`test/fake_task_repository.dart` implementa el contrato completo del repositorio
+con datos en memoria. Permite simular éxito, vacío y un `TaskFailure` controlado.
+Las pruebas de widget proporcionan el ViewModel mediante Provider, como la app.
+Las otras pruebas existentes siguen comprobando navegación, CRUD y prevención
+de envíos duplicados.
+
+Ejecutar desde la raíz del proyecto.
+
+```powershell
+flutter analyze
+flutter test
+```
+
+Las pruebas usan repositorios locales, fakes y respuestas controladas. Pueden
+ejecutarse sin conexión una vez instaladas las dependencias. Si las dependencias
+ya están resueltas, usar `flutter test --no-pub` para evitar su resolución.
+La evidencia de esta sesión es una captura de la terminal con todas las pruebas
+aprobadas y el mensaje `All tests passed!`.
