@@ -52,6 +52,36 @@ class LocalTaskRepository implements TaskRepository {
   Future<List<Task>> getTasks() async => List.unmodifiable(_tasks);
 
   @override
+  Future<Task> createTask(
+    String title,
+    String description,
+    String priority,
+  ) async {
+    var nextId = 1;
+    for (final task in _tasks) {
+      if (task.id >= nextId) nextId = task.id + 1;
+    }
+    final task = Task(
+      id: nextId,
+      title: title,
+      description: description,
+      priority: priority,
+      isCompleted: false,
+      userId: 1,
+    );
+    _tasks.add(task);
+    return task;
+  }
+
+  @override
+  Future<void> updateTask(Task task) async => save(task);
+
+  @override
+  Future<void> deleteTask(int id) async {
+    _tasks.removeWhere((task) => task.id == id);
+  }
+
+  @override
   void save(Task task) {
     final index = _tasks.indexWhere((item) => item.id == task.id);
     if (index == -1) return;

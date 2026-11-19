@@ -103,6 +103,7 @@ void main() {
       if (task.id == 2) {
         await tester.pageBack();
       } else {
+        await tester.ensureVisible(find.text('Volver al listado'));
         await tester.tap(find.text('Volver al listado'));
       }
       await tester.pumpAndSettle();
@@ -144,6 +145,7 @@ void main() {
         ),
         findsOneWidget,
       );
+      await tester.ensureVisible(find.text('Volver al listado'));
       await tester.tap(find.text('Volver al listado'));
       await tester.pumpAndSettle();
     }
@@ -160,6 +162,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('No se encontró esta tarea.'), findsOneWidget);
 
+      await tester.ensureVisible(find.text('Volver al listado'));
       await tester.tap(find.text('Volver al listado'));
       await tester.pumpAndSettle();
       expect(find.text('Mis tareas'), findsOneWidget);

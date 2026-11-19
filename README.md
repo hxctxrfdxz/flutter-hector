@@ -162,3 +162,36 @@ uno válido. Verificar el guardado con y sin fecha, la selección de prioridad,
 la cancelación y el acceso al detalle de las tareas existentes.
 La evidencia de la sesión incluye capturas de errores de validación, formulario
 válido y mensaje de retorno al listado.
+
+## CRUD de tareas
+
+Desde la sesión 10, Guardar prepara el borrador y el listado lo envía mediante
+`POST /todos`. La tarea aparece después de recibir una respuesta correcta,
+con el mensaje «Tarea creada». El título y la descripción se envían al repositorio
+junto con la prioridad. El servicio envía a la API título, estado y usuario.
+Descripción y prioridad se conservan en memoria.
+
+En el detalle, «Editar título» abre un diálogo con el título actual.
+El nuevo título necesita al menos tres caracteres. Guardar envía
+`PATCH /todos/:id` con título y estado. Si la respuesta es correcta, lista y
+detalle muestran el nuevo título y aparece «Tarea actualizada».
+
+«Eliminar tarea» pide confirmación. Cancelar conserva la tarea.
+Confirmar envía `DELETE /todos/:id`; tras una respuesta correcta, la tarea
+desaparece y se regresa al listado con «Tarea eliminada».
+Una operación fallida muestra su mensaje de error y conserva los datos anteriores.
+
+JSONPlaceholder simula las escrituras. Al actualizar la lista o reiniciar,
+vuelven los datos originales. Los títulos creados y editados no se guardan
+permanentemente. Para comprobar edición, usar una tarea recibida por GET:
+un id devuelto por POST puede no existir en el servidor para un PATCH posterior.
+Si POST repite un identificador ya usado, el repositorio asigna el siguiente
+id libre en la copia en memoria para distinguir las nuevas tarjetas.
+
+La fecha opcional forma parte del borrador del formulario de la sesión 9.
+El contrato de creación de esta práctica conserva título, descripción y prioridad.
+El cambio con «Marcar como completada/pendiente» mantiene su comportamiento local.
+
+Para la evidencia, tomar capturas antes y después de crear una tarea, editar
+el título de una tarea existente y confirmar su eliminación. Comprobar también
+la cancelación y un fallo de red: el error debe mostrar el aviso correspondiente.

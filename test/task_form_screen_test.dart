@@ -16,7 +16,7 @@ Widget buildTestApp() {
 }
 
 void main() {
-  testWidgets('Valida el título y devuelve un borrador sin fecha al listado', (
+  testWidgets('Valida el título y crea una tarea sin fecha desde el listado', (
     tester,
   ) async {
     await tester.pumpWidget(buildTestApp());
@@ -44,8 +44,9 @@ void main() {
     await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
     expect(appRouter.state.uri.path, '/');
-    expect(find.text('Formulario válido: Preparar demo'), findsOneWidget);
-    expect(find.widgetWithText(ListTile, 'Preparar demo'), findsNothing);
+    expect(find.text('Tarea creada'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Preparar demo'), 150);
+    expect(find.widgetWithText(ListTile, 'Preparar demo'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
