@@ -47,6 +47,11 @@ class TaskListScreen extends StatelessWidget {
                 : () => context.read<TasksViewModel>().loadTasks(),
             icon: const Icon(Icons.refresh),
           ),
+          IconButton(
+            tooltip: 'Configuración',
+            onPressed: () => context.push('/settings'),
+            icon: const Icon(Icons.settings),
+          ),
         ],
       ),
       body: _buildBody(context, viewModel),

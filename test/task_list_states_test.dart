@@ -51,7 +51,14 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(viewModel.isEmpty, isFalse);
       expect(
-        tester.widget<IconButton>(find.byType(IconButton)).onPressed,
+        tester
+            .widget<IconButton>(
+              find.ancestor(
+                of: find.byIcon(Icons.refresh),
+                matching: find.byType(IconButton),
+              ),
+            )
+            .onPressed,
         isNull,
       );
       await viewModel.loadTasks();

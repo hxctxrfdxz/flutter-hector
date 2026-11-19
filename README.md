@@ -261,3 +261,33 @@ ejecutarse sin conexión una vez instaladas las dependencias. Si las dependencia
 ya están resueltas, usar `flutter test --no-pub` para evitar su resolución.
 La evidencia de esta sesión es una captura de la terminal con todas las pruebas
 aprobadas y el mensaje `All tests passed!`.
+
+## Preferencia del nombre
+
+La sesión 13 agrega Configuración, accesible desde el engranaje de Mis tareas
+y la ruta `/settings`. `UserPreferences` utiliza `SharedPreferencesAsync` para
+leer y escribir el nombre bajo la clave `user_name`. Al no existir un nombre
+guardado, muestra «Estudiante». Guardar quita los espacios de los extremos,
+rechaza nombres vacíos y confirma con «Nombre guardado».
+
+El nombre es una preferencia local del dispositivo o navegador. La API continúa
+consultando las tareas del usuario 2. Esta preferencia no representa una sesión
+autenticada ni contiene credenciales.
+
+Para comprobar la persistencia en Chrome, mantener el mismo perfil y la misma
+dirección con puerto fijo. Desde la raíz del proyecto, ejecutar este servidor
+y abrir la dirección en una ventana normal de Chrome.
+
+```powershell
+flutter run -d web-server --web-port 7357 --no-pub
+```
+
+Abrir [TaskFlow en localhost](http://localhost:7357), entrar en Configuración,
+escribir el nombre y guardar. Tomar la primera captura con la confirmación.
+Cerrar la pestaña de TaskFlow y volver a abrir la misma dirección. Entrar en
+Configuración y tomar la segunda captura con el nombre recuperado.
+Mantener la terminal del servidor abierta durante la comprobación.
+
+Chrome almacena esta preferencia por origen, que incluye el puerto. Cambiar de
+puerto, perfil o limpiar los datos del sitio puede cambiar el almacenamiento
+disponible para la aplicación.
