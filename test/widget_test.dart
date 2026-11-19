@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taskflow/main.dart';
+import 'package:provider/provider.dart';
+import 'package:taskflow/app/taskflow_app.dart';
+import 'package:taskflow/features/tasks/data/local_task_repository.dart';
+import 'package:taskflow/features/tasks/presentation/tasks_view_model.dart';
+import 'package:taskflow/features/tasks/presentation/welcome_screen.dart';
+
+Widget buildTestApp() {
+  return ChangeNotifierProvider<TasksViewModel>(
+    create: (_) => TasksViewModel(LocalTaskRepository()),
+    child: const TaskFlowApp(),
+  );
+}
 
 void main() {
   testWidgets('El listado muestra tareas locales y permite desplazarse', (
@@ -11,7 +22,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const TaskFlowApp());
+    await tester.pumpWidget(buildTestApp());
     await tester.pumpAndSettle();
     expect(find.text('Mis tareas'), findsOneWidget);
     expect(find.text('Crear la bienvenida de TaskFlow'), findsOneWidget);
@@ -29,10 +40,10 @@ void main() {
 
   testWidgets('Abre tres tareas por id y vuelve al listado', (tester) async {
     appRouter.go('/');
-    await tester.pumpWidget(const TaskFlowApp());
+    await tester.pumpWidget(buildTestApp());
     await tester.pumpAndSettle();
 
-    for (final task in demoTasks.take(3)) {
+    for (final task in LocalTaskRepository().getTasks().take(3)) {
       await tester.tap(find.text(task.title));
       await tester.pumpAndSettle();
 
@@ -49,19 +60,18 @@ void main() {
       );
       expect(appRouter.state.uri.path, '/task/${task.id}');
 
-      await tester.tap(find.text('Consultar estado'));
+      await tester.tap(
+        find.text(
+          task.isCompleted ? 'Marcar como pendiente' : 'Marcar como completada',
+        ),
+      );
       await tester.pumpAndSettle();
       expect(
         find.text(
-          task.isCompleted
-              ? 'Esta tarea ya está completada.'
-              : 'Esta tarea está pendiente.',
+          task.isCompleted ? 'Estado: pendiente' : 'Estado: completada',
         ),
         findsOneWidget,
       );
-      // Esperar a que termine el aviso antes de cambiar de pantalla.
-      await tester.pump(const Duration(seconds: 5));
-      await tester.pumpAndSettle();
 
       if (task.id == 2) {
         await tester.pageBack();
@@ -71,13 +81,51 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Mis tareas'), findsOneWidget);
       expect(appRouter.state.uri.path, '/');
+      final card = find.ancestor(
+        of: find.text(task.title),
+        matching: find.byType(ListTile),
+      );
+      expect(
+        find.descendant(
+          of: card,
+          matching: find.byIcon(
+            task.isCompleted
+                ? Icons.radio_button_unchecked
+                : Icons.check_circle,
+          ),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text(task.title));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          task.isCompleted ? 'Estado: pendiente' : 'Estado: completada',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.text(
+          task.isCompleted ? 'Marcar como completada' : 'Marcar como pendiente',
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          task.isCompleted ? 'Estado: completada' : 'Estado: pendiente',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Volver al listado'));
+      await tester.pumpAndSettle();
     }
   });
 
   testWidgets('Muestra un aviso si el id es inválido o no existe', (
     tester,
   ) async {
-    await tester.pumpWidget(const TaskFlowApp());
+    await tester.pumpWidget(buildTestApp());
     await tester.pumpAndSettle();
 
     for (final id in ['abc', '999']) {
