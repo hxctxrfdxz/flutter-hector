@@ -195,3 +195,38 @@ El cambio con «Marcar como completada/pendiente» mantiene su comportamiento lo
 Para la evidencia, tomar capturas antes y después de crear una tarea, editar
 el título de una tarea existente y confirmar su eliminación. Comprobar también
 la cancelación y un fallo de red: el error debe mostrar el aviso correspondiente.
+
+## Manejo de errores y control de envíos
+
+En la sesión 11, el repositorio remoto traduce los errores de consulta, creación,
+edición y eliminación a `TaskFailure`. Las pantallas muestran mensajes
+comprensibles y los detalles técnicos quedan en la consola.
+
+| Situación | Mensaje |
+| --- | --- |
+| Fallo de conexión | Revisa tu conexión a internet. |
+| Tiempo de conexión, envío o respuesta agotado | El servidor tardó demasiado. |
+| Respuesta HTTP de error | La API respondió con HTTP 404, 500 u otro código recibido. |
+| Formato o tipos inesperados | La API devolvió datos inesperados. |
+| Fallo no previsto | Ocurrió un problema inesperado. |
+
+`isSaving` bloquea nuevos envíos durante crear, editar y eliminar, y se libera
+en `finally` tanto si la operación funciona como si falla. Guardar muestra
+«Guardando...» y queda deshabilitado mientras espera. Un fallo de creación o
+edición conserva los campos para permitir corregirlos o repetir la acción
+manualmente. Las consultas pueden recuperarse con Reintentar. No se repite POST
+automáticamente, ya que una repetición podría duplicar una tarea.
+
+Para las evidencias en Chrome, comprobar estos casos.
+
+1. Abrir DevTools → Network y seleccionar Offline. Pulsar «Actualizar tareas»,
+   capturar «Revisa tu conexión a internet.» y el botón Reintentar.
+2. Seleccionar No throttling y pulsar Reintentar. Capturar la lista recuperada.
+3. Para simular una respuesta HTTP de error, cambiar temporalmente la ruta
+   `'/todos'` de `getTasks` en `TaskApiService` por `'/ruta-inexistente'`,
+   guardar y hacer Hot Restart. Capturar el mensaje con el código HTTP recibido.
+4. Restaurar la ruta `'/todos'`, guardar y hacer Hot Restart para recuperar la lista.
+
+Para observar el bloqueo de Guardar, seleccionar Slow 3G en Network y guardar
+un formulario válido. Restaurar No throttling al terminar. La versión final
+usa `/todos`, `userId = 2` y los límites de red originales.

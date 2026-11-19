@@ -95,7 +95,12 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => TasksViewModel(LocalTaskRepository()),
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Abrir formulario'));
     await tester.pumpAndSettle();

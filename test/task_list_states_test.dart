@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:taskflow/core/task_failure.dart';
 import 'package:taskflow/features/tasks/data/local_task_repository.dart';
 import 'package:taskflow/features/tasks/domain/task.dart';
 import 'package:taskflow/features/tasks/presentation/task_list_screen.dart';
@@ -62,9 +63,11 @@ void main() {
       expect(repository.requests, hasLength(2));
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-      repository.requests[1].completeError(Exception('Fallo de red simulado'));
+      repository.requests[1].completeError(
+        const TaskFailure('Revisa tu conexión a internet.'),
+      );
       await tester.pumpAndSettle();
-      expect(find.text('No se pudieron cargar las tareas.'), findsOneWidget);
+      expect(find.text('Revisa tu conexión a internet.'), findsOneWidget);
       expect(find.text('Reintentar'), findsOneWidget);
       expect(find.text(testTask.title), findsNothing);
       expect(viewModel.tasks, isEmpty);

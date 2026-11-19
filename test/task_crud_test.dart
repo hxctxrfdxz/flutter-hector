@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:taskflow/app/taskflow_app.dart';
+import 'package:taskflow/core/task_failure.dart';
 import 'package:taskflow/features/tasks/data/local_task_repository.dart';
 import 'package:taskflow/features/tasks/data/remote_task_repository.dart';
 import 'package:taskflow/features/tasks/data/task_api_service.dart';
@@ -54,14 +55,16 @@ class FailingTaskRepository extends LocalTaskRepository {
     String description,
     String priority,
   ) async {
-    throw StateError('Fallo POST');
+    throw const TaskFailure('Revisa tu conexión a internet.');
   }
 
   @override
-  Future<void> updateTask(Task task) async => throw StateError('Fallo PATCH');
+  Future<void> updateTask(Task task) async =>
+      throw const TaskFailure('Revisa tu conexión a internet.');
 
   @override
-  Future<void> deleteTask(int id) async => throw StateError('Fallo DELETE');
+  Future<void> deleteTask(int id) async =>
+      throw const TaskFailure('Revisa tu conexión a internet.');
 }
 
 void main() {
@@ -172,9 +175,11 @@ void main() {
     await tester.ensureVisible(find.text('Guardar'));
     await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
-    expect(find.text('No se pudo crear la tarea'), findsOneWidget);
+    expect(find.text('Revisa tu conexión a internet.'), findsOneWidget);
     expect(find.text('Tarea creada'), findsNothing);
-    await tester.pump(const Duration(seconds: 5));
+    expect(find.widgetWithText(TextFormField, 'Tarea fallida'), findsOneWidget);
+    await tester.ensureVisible(find.text('Cancelar'));
+    await tester.tap(find.text('Cancelar'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Crear la bienvenida de TaskFlow'));
@@ -185,10 +190,13 @@ void main() {
     await tester.enterText(find.byType(TextFormField), 'Cambio fallido');
     await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
-    expect(find.text('No se pudo actualizar la tarea'), findsOneWidget);
-    expect(find.text('Crear la bienvenida de TaskFlow'), findsOneWidget);
+    expect(find.text('Revisa tu conexión a internet.'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextFormField, 'Cambio fallido'),
+      findsOneWidget,
+    );
     expect(find.text('Tarea actualizada'), findsNothing);
-    await tester.pump(const Duration(seconds: 5));
+    await tester.tap(find.text('Cancelar'));
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Eliminar tarea'));
@@ -196,7 +204,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Eliminar'));
     await tester.pumpAndSettle();
-    expect(find.text('No se pudo eliminar la tarea'), findsOneWidget);
+    expect(find.text('Revisa tu conexión a internet.'), findsOneWidget);
     expect(appRouter.state.uri.path, '/task/1');
     expect(find.text('Crear la bienvenida de TaskFlow'), findsOneWidget);
     expect(find.text('Tarea eliminada'), findsNothing);

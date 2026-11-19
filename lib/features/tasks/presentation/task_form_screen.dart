@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/task_failure.dart';
+import 'tasks_view_model.dart';
 
 class TaskDraft {
   const TaskDraft(this.title, this.description, this.priority, {this.dueDate});
@@ -23,6 +27,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   final _description = TextEditingController();
   String _priority = 'Media';
   DateTime? _dueDate;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -45,7 +50,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     setState(() => _dueDate = selected);
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    final viewModel = context.read<TasksViewModel>();
+    if (viewModel.isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     final draft = TaskDraft(
@@ -54,80 +61,114 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       _priority,
       dueDate: _dueDate,
     );
-    context.pop(draft);
+    setState(() => _errorMessage = null);
+    try {
+      await viewModel.createTask(
+        draft.title,
+        draft.description,
+        draft.priority,
+      );
+      if (mounted) context.pop(draft);
+    } on TaskFailure catch (failure) {
+      if (mounted) setState(() => _errorMessage = failure.message);
+    } catch (error) {
+      debugPrint('Error inesperado al crear: $error');
+      if (mounted) {
+        setState(() => _errorMessage = 'Ocurrió un problema inesperado.');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isSaving = context.watch<TasksViewModel>().isSaving;
     final selectedDate = _dueDate;
     final dateLabel = selectedDate == null
         ? 'Elegir fecha (opcional)'
         : 'Fecha: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}';
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Nueva tarea')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _title,
-              decoration: const InputDecoration(labelText: 'Título'),
-              validator: (value) {
-                final title = value?.trim() ?? '';
-                if (title.isEmpty) return 'Escribe el título de tu tarea.';
-                if (title.length < 3) {
-                  return 'El título debe tener al menos 3 caracteres.';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _description,
-              decoration: const InputDecoration(labelText: 'Descripción'),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: _priority,
-              decoration: const InputDecoration(labelText: 'Prioridad'),
-              items: ['Alta', 'Media', 'Baja']
-                  .map(
-                    (value) =>
-                        DropdownMenuItem(value: value, child: Text(value)),
-                  )
-                  .toList(),
-              onChanged: (value) =>
-                  setState(() => _priority = value ?? 'Media'),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _selectDate,
-                    icon: const Icon(Icons.calendar_today),
-                    label: Text(dateLabel),
+    return PopScope(
+      canPop: !isSaving,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Nueva tarea')),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextFormField(
+                enabled: !isSaving,
+                controller: _title,
+                decoration: const InputDecoration(labelText: 'Título'),
+                validator: (value) {
+                  final title = value?.trim() ?? '';
+                  if (title.isEmpty) return 'Escribe el título de tu tarea.';
+                  if (title.length < 3) {
+                    return 'El título debe tener al menos 3 caracteres.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                enabled: !isSaving,
+                controller: _description,
+                decoration: const InputDecoration(labelText: 'Descripción'),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _priority,
+                decoration: const InputDecoration(labelText: 'Prioridad'),
+                items: ['Alta', 'Media', 'Baja']
+                    .map(
+                      (value) =>
+                          DropdownMenuItem(value: value, child: Text(value)),
+                    )
+                    .toList(),
+                onChanged: isSaving
+                    ? null
+                    : (value) => setState(() => _priority = value ?? 'Media'),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: isSaving ? null : _selectDate,
+                      icon: const Icon(Icons.calendar_today),
+                      label: Text(dateLabel),
+                    ),
                   ),
+                  if (selectedDate != null)
+                    IconButton(
+                      tooltip: 'Quitar fecha',
+                      onPressed: isSaving
+                          ? null
+                          : () => setState(() => _dueDate = null),
+                      icon: const Icon(Icons.clear),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              if (_errorMessage != null) ...[
+                Text(
+                  _errorMessage!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
-                if (selectedDate != null)
-                  IconButton(
-                    tooltip: 'Quitar fecha',
-                    onPressed: () => setState(() => _dueDate = null),
-                    icon: const Icon(Icons.clear),
-                  ),
+                const SizedBox(height: 12),
               ],
-            ),
-            const SizedBox(height: 24),
-            FilledButton(onPressed: _submit, child: const Text('Guardar')),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => context.pop(),
-              child: const Text('Cancelar'),
-            ),
-          ],
+              FilledButton(
+                onPressed: isSaving ? null : _submit,
+                child: Text(isSaving ? 'Guardando...' : 'Guardar'),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: isSaving ? null : () => context.pop(),
+                child: const Text('Cancelar'),
+              ),
+            ],
+          ),
         ),
       ),
     );

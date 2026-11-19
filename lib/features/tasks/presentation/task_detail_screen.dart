@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/task_failure.dart';
 import '../domain/task.dart';
 import 'tasks_view_model.dart';
 
@@ -11,24 +12,14 @@ class TaskDetailScreen extends StatelessWidget {
   final int? taskId;
 
   Future<void> _editTitle(BuildContext context, Task task) async {
-    final newTitle = await showDialog<String>(
+    final saved = await showDialog<bool>(
       context: context,
-      builder: (_) => _EditTitleDialog(title: task.title),
+      barrierDismissible: false,
+      builder: (_) => _EditTitleDialog(task: task),
     );
-    if (!context.mounted || newTitle == null) return;
-    try {
-      await context.read<TasksViewModel>().updateTask(
-        task.copyWith(title: newTitle),
-      );
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Tarea actualizada')));
-    } catch (_) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo actualizar la tarea')),
-      );
-    }
+    if (!context.mounted || saved != true) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Tarea actualizada')));
   }
 
   Future<void> _deleteTask(BuildContext context, Task task) async {
@@ -61,17 +52,24 @@ class TaskDetailScreen extends StatelessWidget {
       }
       messenger.clearSnackBars();
       messenger.showSnackBar(const SnackBar(content: Text('Tarea eliminada')));
-    } catch (_) {
+    } on TaskFailure catch (failure) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(failure.message)));
+    } catch (error) {
+      debugPrint('Error inesperado al eliminar: $error');
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo eliminar la tarea')),
+        const SnackBar(content: Text('Ocurrió un problema inesperado.')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final task = context.watch<TasksViewModel>().findTask(taskId);
+    final viewModel = context.watch<TasksViewModel>();
+    final task = viewModel.findTask(taskId);
+    final isSaving = viewModel.isSaving;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detalle de tarea')),
@@ -91,9 +89,11 @@ class TaskDetailScreen extends StatelessWidget {
             Text('Usuario: ${task.userId}'),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                context.read<TasksViewModel>().toggleCompleted(task.id);
-              },
+              onPressed: isSaving
+                  ? null
+                  : () {
+                      context.read<TasksViewModel>().toggleCompleted(task.id);
+                    },
               child: Text(
                 task.isCompleted
                     ? 'Marcar como pendiente'
@@ -102,16 +102,20 @@ class TaskDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: () => _editTitle(context, task),
+              onPressed: isSaving ? null : () => _editTitle(context, task),
               icon: const Icon(Icons.edit),
               label: const Text('Editar título'),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: () => _deleteTask(context, task),
+              onPressed: isSaving ? null : () => _deleteTask(context, task),
               icon: const Icon(Icons.delete_outline),
               label: const Text('Eliminar tarea'),
             ),
+            if (isSaving) ...[
+              const SizedBox(height: 12),
+              const Text('Guardando cambios...'),
+            ],
           ],
           const SizedBox(height: 24),
           FilledButton.tonalIcon(
@@ -132,9 +136,9 @@ class TaskDetailScreen extends StatelessWidget {
 }
 
 class _EditTitleDialog extends StatefulWidget {
-  const _EditTitleDialog({required this.title});
+  const _EditTitleDialog({required this.task});
 
-  final String title;
+  final Task task;
 
   @override
   State<_EditTitleDialog> createState() => _EditTitleDialogState();
@@ -143,11 +147,12 @@ class _EditTitleDialog extends StatefulWidget {
 class _EditTitleDialogState extends State<_EditTitleDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _controller;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.title);
+    _controller = TextEditingController(text: widget.task.title);
   }
 
   @override
@@ -156,37 +161,69 @@ class _EditTitleDialogState extends State<_EditTitleDialog> {
     super.dispose();
   }
 
+  Future<void> _save() async {
+    final viewModel = context.read<TasksViewModel>();
+    if (viewModel.isSaving || !_formKey.currentState!.validate()) return;
+    setState(() => _errorMessage = null);
+    try {
+      await viewModel.updateTask(
+        widget.task.copyWith(title: _controller.text.trim()),
+      );
+      if (mounted) Navigator.pop(context, true);
+    } on TaskFailure catch (failure) {
+      if (mounted) setState(() => _errorMessage = failure.message);
+    } catch (error) {
+      debugPrint('Error inesperado al editar: $error');
+      if (mounted) {
+        setState(() => _errorMessage = 'Ocurrió un problema inesperado.');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Editar título'),
-      content: Form(
-        key: _formKey,
-        child: TextFormField(
-          controller: _controller,
-          decoration: const InputDecoration(labelText: 'Título'),
-          validator: (value) {
-            if ((value?.trim() ?? '').length < 3) {
-              return 'El título debe tener al menos 3 caracteres.';
-            }
-            return null;
-          },
+    final isSaving = context.watch<TasksViewModel>().isSaving;
+    return PopScope(
+      canPop: !isSaving,
+      child: AlertDialog(
+        title: const Text('Editar título'),
+        content: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                enabled: !isSaving,
+                controller: _controller,
+                decoration: const InputDecoration(labelText: 'Título'),
+                validator: (value) {
+                  if ((value?.trim() ?? '').length < 3) {
+                    return 'El título debe tener al menos 3 caracteres.';
+                  }
+                  return null;
+                },
+              ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _errorMessage!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            ],
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: isSaving ? null : () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: isSaving ? null : _save,
+            child: Text(isSaving ? 'Guardando...' : 'Guardar'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              Navigator.pop(context, _controller.text.trim());
-            }
-          },
-          child: const Text('Guardar'),
-        ),
-      ],
     );
   }
 }
