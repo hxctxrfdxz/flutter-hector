@@ -50,7 +50,8 @@ tareas en sesiones posteriores.
 | `isCompleted` | `bool` | `true` indica completada y `false` indica pendiente. |
 | `userId` | `int` | Identificador del usuario propietario. Los datos locales usan el usuario de prueba 1. |
 
-`Task.fromJson` espera las seis claves con los tipos indicados.
+`Task.fromJson` acepta el formato local con seis campos y el formato remoto
+descrito en «API de tareas».
 
 ### Boceto de pantallas
 
@@ -77,3 +78,37 @@ tareas en sesiones posteriores.
 | `DELETE /tasks/:id` | Eliminar una tarea. |
 
 La API se elegirá en una sesión posterior. En la sesión 5 se usan datos locales.
+
+## API de tareas
+
+Desde la sesión 7, TaskFlow obtiene tareas de JSONPlaceholder usando Dio.
+La URL exacta elegida para esta práctica es
+[https://jsonplaceholder.typicode.com/todos?userId=2](https://jsonplaceholder.typicode.com/todos?userId=2).
+La constante `TaskApiService.userId = 2` selecciona las tareas del usuario 2
+como adaptación del ejemplo guiado, que usa el usuario 1.
+
+| Campo recibido | Campo de TaskFlow |
+| --- | --- |
+| `id` | `id`, identificador de la tarea. |
+| `title` | `title`, título que aparece en lista y detalle. |
+| `completed` | `isCompleted`, estado pendiente o completada. |
+| `userId` | `userId`, identificador del propietario. |
+
+La API entrega esos cuatro campos. TaskFlow completa `description` con
+«Sin descripción (API)» y `priority` con «Sin prioridad (API)» cuando faltan.
+Estos textos son valores predeterminados de la aplicación.
+
+`TaskApiService` conoce la URL y realiza el GET. `Task.fromJson` convierte cada
+objeto JSON en una tarea. `RemoteTaskRepository` conserva una copia en memoria.
+`TasksViewModel.loadTasks` espera la respuesta y notifica a las vistas mediante
+Provider. La consola registra `GET /todos?userId=2 → HTTP 200` cuando la consulta
+termina correctamente. Durante la espera se muestra un indicador de carga y,
+si falla, «No se pudieron cargar las tareas.».
+
+Marcar una tarea como completada o pendiente modifica la copia local en memoria.
+Al reiniciar la app o volver a cargar desde la API se recuperan los valores del
+servidor. La sesión 7 realiza consultas GET. Las operaciones de escritura remota
+se trabajarán en sesiones posteriores.
+
+Las cinco tareas propias de la sesión 6 siguen en `LocalTaskRepository`, que
+también implementa el contrato asíncrono `Future<List<Task>>`.
