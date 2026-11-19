@@ -112,3 +112,28 @@ se trabajarán en sesiones posteriores.
 
 Las cinco tareas propias de la sesión 6 siguen en `LocalTaskRepository`, que
 también implementa el contrato asíncrono `Future<List<Task>>`.
+
+## Estados de la lista y reintento
+
+En la sesión 8, la lista distingue carga, tareas disponibles, respuesta vacía
+y error. La acción «Actualizar tareas» de la barra y el gesto de deslizar hacia
+abajo repiten la consulta. Mientras hay una petición activa, el botón queda
+deshabilitado y el ViewModel evita iniciar otra consulta simultánea.
+
+Para comprobar cada estado en Chrome con `flutter run -d chrome`, seguir este
+procedimiento.
+
+| Estado | Cómo provocarlo | Resultado esperado |
+| --- | --- | --- |
+| Datos disponibles | Mantener internet activo y `TaskApiService.userId = 2`, iniciar la app o pulsar «Actualizar tareas». | Aparecen las tareas remotas y cada tarjeta abre su detalle. |
+| Carga | En DevTools de Chrome, abrir Network, seleccionar Slow 3G y pulsar «Actualizar tareas». | Aparece el indicador de progreso y se deshabilita el botón de actualización. Al finalizar se presenta la respuesta. |
+| Error | Con DevTools abierto, seleccionar Offline en Network y pulsar «Actualizar tareas». | Aparece «No se pudieron cargar las tareas.» junto a «Reintentar». |
+| Recuperación | Tras el error, cambiar Offline a No throttling y pulsar «Reintentar». | Las tareas vuelven sin reiniciar TaskFlow. |
+| Vacío | Cambiar temporalmente `TaskApiService.userId` a `9999` y hacer Hot Restart. | La API devuelve una lista vacía y aparecen «Todavía no hay tareas para mostrar.» y «Actualizar». |
+
+Al terminar la comprobación de vacío, restaurar `userId = 2`, hacer Hot Restart
+y dejar Network en No throttling. Para la evidencia se necesitan capturas del
+listado, del vacío y del error, además de comprobar la recuperación con Reintentar.
+Una respuesta vacía se considera válida. Un fallo limpia las tareas anteriores
+y muestra el error. Actualizar vuelve a leer el servidor y recupera sus estados
+originales para las tareas marcadas localmente.
