@@ -5,6 +5,13 @@ Consulta tareas por HTTPS, muestra su detalle y permite practicar creación,
 edición y eliminación con JSONPlaceholder. Incluye búsqueda, filtro de pendientes,
 recuperación de errores y una preferencia local para el nombre.
 
+## Entrega final — sesión 16
+
+La [presentación escrita](docs/entrega-final.md) reúne la explicación del proyecto,
+cuatro capturas del APK en Android, los resultados de verificación y sus
+limitaciones. Incluye la descarga del [APK release](docs/apk/taskflow-release.apk),
+instalado y probado en un Pixel 6 emulado con Android 15.
+
 ## Requisitos
 
 - Flutter SDK con Dart compatible con `^3.13.7`, según `pubspec.yaml`.
